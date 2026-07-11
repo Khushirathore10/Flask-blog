@@ -1,38 +1,28 @@
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_bcrypt import Bcrypt
-from flask_login import LoginManager
-from flask_mail import Mail
+import os
+from dotenv import load_dotenv
 
-from config import Config
+load_dotenv()
 
-db = SQLAlchemy()
-bcrypt = Bcrypt()
-login_manager = LoginManager()
-mail = Mail()
+basedir = os.path.abspath(os.path.dirname(__file__))
 
+# Create the instance directory if it doesn't exist
+instance_dir = os.path.join(basedir, "instance")
+os.makedirs(instance_dir, exist_ok=True)
 
-def create_app():
-    app = Flask(__name__)
-    app.config.from_object(Config)
+class Config:
+    SECRET_KEY = os.getenv("SECRET_KEY")
 
-    db.init_app(app)
-    bcrypt.init_app(app)
-    login_manager.init_app(app)
-    mail.init_app(app)
+    SQLALCHEMY_DATABASE_URI = (
+        os.getenv("DATABASE_URL")
+        or "sqlite:///" + os.path.join(instance_dir, "site.db")
+    )
 
-    login_manager.login_view = 'users.login'
-    login_manager.login_message_category = 'info'
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
 
-    from app.users.routes import users
-    from app.posts.routes import posts
-    from app.main.routes import main
-    from app.errors.handlers import errors
-    app.register_blueprint(users)
-    app.register_blueprint(posts)
-    app.register_blueprint(main)
-    app.register_blueprint(errors)
-    return app
+    MAIL_SERVER = os.getenv("MAIL_SERVER")
+    MAIL_PORT = int(os.getenv("MAIL_PORT", 587))
+    MAIL_USE_TLS = os.getenv("MAIL_USE_TLS", "True") == "True"
+    MAIL_USE_SSL = os.getenv("MAIL_USE_SSL", "False") == "True"
 
-
-app = create_app()
+    MAIL_USERNAME = os.getenv("MAIL_USERNAME")
+    MAIL_PASSWORD = os.getenv("MAIL_PASSWORD")
